@@ -45,6 +45,9 @@
     - Video and sensor synchronization
     - Disparity/Depth/Point Cloud extraction using OpenCV Transparent API
     - Depth tuning using OpenCV control GUI
+ * Early-stage ROS 2 support
+    - Publishing images to ROS 2 topics using `zed_cam2image` node.
+    - _More to come soon!_ 
 
 ## Description
 
@@ -89,6 +92,14 @@ git clone https://github.com/stereolabs/zed-open-capture.git
 cd zed-open-capture
 ```
 
+**If using ROS 2** clone the repository into your workspace `src` folder, e.g.
+
+```bash
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+git clone https://github.com/stereolabs/zed-open-capture.git
+```
+
 ### Add udev rule
 
 Stereo cameras such as ZED 2 and ZED Mini have built-in sensors (e.g. IMU) that are identified as USB HID devices.
@@ -96,7 +107,8 @@ To be able to access the USB HID device, you must add a udev rule contained in t
 
 ```bash
 cd udev
-bash install_udev_rule.sh
+chmod +x install_udev_rule.sh
+sudo bash install_udev_rule.sh
 cd ..
 ```
 
@@ -138,6 +150,15 @@ cmake .. -DBUILD_VIDEO=OFF -DBUILD_EXAMPLES=OFF
 make -j$(nproc)
 ```
 
+#### Build ROS wrapper
+
+Move to your workspace folder and use `colcon` to build the library and ROS wrapper
+
+```bash
+cd ~/ros2_ws
+colcon build --packages-select zed_open_capture
+```
+
 ### Install
 
 To install the library, go to the `build` folder and launch the following commands:
@@ -146,6 +167,8 @@ To install the library, go to the `build` folder and launch the following comman
 sudo make install
 sudo ldconfig
 ```
+
+**If using ROS 2** you can skip the installation step: `colcon build` will take care of installation for you.
 
 ## Run
 
@@ -177,6 +200,16 @@ const sl_oc::sensors::data::Environment envData = sens.getLastEnvironmentData(10
 const sl_oc::sensors::data::Temperature tempData = sens.getLastCameraTemperatureData(100);
 ```
     
+### Obtain images on ROS 2 topics
+
+The images from the camera can be published to ROS 2 topics using the `zed_cam2image` node. Use the ROS parameter `stereo_mode:=true` to combine the left and right cameras into a single image, or `stereo_mode:=false` to publish a separate image topics for the left and right camera.
+
+```bash
+cd ~/ros2_ws
+source install/setup.bash
+ros2 run zed_open_capture zed_cam2image --ros-args -p frequency:=25.0 -p stereo_mode:=false
+```
+
 ## Running the examples
 
 After installing the library and examples, you will have the following sample applications in your `build` directory:

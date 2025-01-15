@@ -139,6 +139,42 @@ add_library(${PROJECT_NAME} SHARED ${SRC_FULL} )
 target_link_libraries( ${PROJECT_NAME}  ${DEP_LIBS})
 
 ############################################################################
+# ROS 2 wrapper
+
+# Set cmake policies to prevent build errors
+cmake_policy(SET CMP0057 NEW)
+
+# Export a compile_commands.json file for the clangd language server
+# Alternative: remove this line and use `colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(image_tools REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+
+# zed_cam2image node
+add_executable(zed_cam2image
+    src/nodes/zed_cam2image.cpp
+)
+target_include_directories(zed_cam2image PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
+target_compile_features(zed_cam2image PUBLIC c_std_99 cxx_std_17)
+target_link_libraries(zed_cam2image ${PROJECT_NAME}) # Link the ZED Open Capture library to the ROS node
+ament_target_dependencies(
+    zed_cam2image
+    "rclcpp"
+    "image_tools"
+    "cv_bridge"
+    "sensor_msgs"
+    "std_msgs"
+)
+
+############################################################################
 # Install rules
 set_target_properties(${PROJECT_NAME} PROPERTIES
     PUBLIC_HEADER "${HDR_FULL}"
@@ -147,6 +183,13 @@ install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/zed-open-capture)
 
+# Install rules for ROS nodes
+install(TARGETS zed_cam2image
+    DESTINATION lib/${PROJECT_NAME}
+)
+
+# Ensure the ROS package is installed and recognized
+ament_package()
 
 ############################################################################
 # Generate examples
